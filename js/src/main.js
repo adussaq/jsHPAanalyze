@@ -685,6 +685,9 @@
         let state = [];
         let groups = build_groups(data, state);
         let $main = $('#main');
+        $main.empty();
+        $main.append("<h1>JS HPA Visualizer</h1>");
+        $main.append('<p class="lead">Select elements of the subsequent charts then scroll to the bottom to click to create figures.</p>');
         let $row = $('<div>', {
             class: "row"
         }).appendTo($main);
@@ -726,18 +729,155 @@
             $sampleNumber.empty();
             $buttons.empty();
             console.log('working on the update', states, data, list, list.map((x) => x["Prognostic p-value"]));
-            $sampleNumber.text(list.length + " matched entries");
+            $sampleNumber.text(list.length + " matched entries (Recommend no more than 50 entries, this will load slower the first time viewing data.)");
             $('<button>', {
                 class: "btn btn-primary",
                 type: "button",
                 text: "Build Figures"
             }).click(function (evt) {
                 evt.preventDefault();
+                $figures.empty();
+                let $count = $('<div>').appendTo($buttons);
+                let count = 0;
+                let total = list.length;
                 console.log(list);
+                $count.html('<p class="lead">Loading beginning</p>');
                 Promise.all(list.map(function (entry) {
-                    return glob.get({ensembl: entry.Ensembl});
-                })).then(function (all) {
-                    console.log(all, JSON.stringify(all));
+                    return glob.get({ensembl: entry.Ensembl})
+                        .then(function (res) {
+                            count += 1;
+                            $count.html('<p class="lead">Loaded: ' + count + ' / ' + total + '</p>');
+                            return res;
+                        });
+                })).then(function (x) {
+                    return new Promise(function (resolve) {
+                        setTimeout(function () {
+                            resolve(x);
+                        }, 1000);
+                    });
+                }).then(function (tmp) {
+                    $figures.empty();
+
+                    //get all
+                    const all = tmp.map(function (gene) {
+                        return gene.proteinAtlas.entry;
+                    });
+
+                    const pt_perc = all.map(function (entry) {
+                        if (entry.hasOwnProperty("antibody")) {
+                            if (!Array.isArray(entry.antibody)) {
+                                entry.antibody = [entry.antibody];
+                            }
+                            entry.antibody.sort(function (a, b) {
+                                return b["@releaseVersion"] * 1 - a["@releaseVersion"] * 1;
+                            });
+                            let found;
+                            entry.antibody.map(function (ant) {
+                                if (!found && ant.hasOwnProperty("tissueExpression")) {
+                                    found = ant.tissueExpression.filter((x) => x["@assayType"] === "pathology")[0];
+                                }
+                            });
+                            if (found) {
+                                return {anti: found.data, name: entry.name};
+                            }
+                            return found;
+                        }
+                        return;
+                    }).filter((x) => x);
+                    console.log(all);
+                    console.log(pt_perc);
+
+                    //build figure data
+                    let figures = {};
+                    let categories = [];
+
+                    pt_perc.map(function (entry) {
+                        categories.push(entry.name);
+                        entry.anti.map(function (dat) {
+                            if (dat.tissueCell.hasOwnProperty("level") && !Array.isArray(dat.tissueCell.level)) {
+                                dat.tissueCell.level = [dat.tissueCell.level];
+                            }
+                            figures[dat.tissue] = figures[dat.tissue] || {
+                                series: [
+                                    {name: "Not Detected", data: []},
+                                    {name: "Low", data: []},
+                                    {name: "Medium", data: []},
+                                    {name: "High", data: []}
+                                ]
+                            };
+                            console.log(dat.tissue, figures[dat.tissue], dat);
+                            figures[dat.tissue].series.forEach((x) => x.data.push(0));
+                            const ind = figures[dat.tissue].series[0].data.length - 1;
+                            dat.tissueCell.level.forEach(function (count) {
+                                if (count["#text"] === "high") {
+                                    figures[dat.tissue].series[3].data[ind] = count["@count"] * 1;
+                                } else if (count["#text"] === "medium") {
+                                    figures[dat.tissue].series[2].data[ind] = count["@count"] * 1;
+                                } else if (count["#text"] === "low") {
+                                    figures[dat.tissue].series[1].data[ind] = count["@count"] * 1;
+                                } else {
+                                    figures[dat.tissue].series[0].data[ind] = count["@count"] * 1;
+                                }
+                            });
+                        });
+                    });
+
+                    //Create figures
+                    Object.keys(figures).map(function (figData) {
+                        let options = {
+                            chart: {
+                                height: 350,
+                                type: 'bar',
+                                stacked: true,
+                                stackType: '100%'
+                            },
+                            responsive: [{
+                                breakpoint: 480,
+                                options: {
+                                    legend: {
+                                        position: 'bottom',
+                                        offsetX: -10,
+                                        offsetY: 0
+                                    }
+                                }
+                            }],
+                            series: figures[figData].series,
+                            xaxis: {
+                                title: {
+                                    text: "Genes"
+                                },
+                                categories: categories
+                            },
+                            yaxis: {
+                                title: {
+                                    text: "Percent of Patients"
+                                }
+                            },
+                            title: {
+                                text: figData
+                            },
+                            fill: {
+                                opacity: 1
+                            },
+                            legend: {
+                                position: 'bottom',
+                                offsetX: 0,
+                                offsetY: -5
+                            }
+                        };
+                        let $fig = $('<div>', {
+                            class: 'col col-xs-12 col-sm-6'
+                        });
+                        $fig.appendTo($figures);
+                        console.log(options);
+                        let chart = new ApexCharts(
+                            $fig[0],
+                            options
+                        );
+                        chart.render();
+                    });
+
+                    console.log(figures, categories);
                 });
             }).appendTo($buttons);
         });
