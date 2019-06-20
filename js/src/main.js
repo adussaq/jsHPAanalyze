@@ -733,7 +733,7 @@
             $('<button>', {
                 class: "btn btn-primary",
                 type: "button",
-                text: "Build Figures"
+                text: "Build Figure: Patient Protein Expression"
             }).click(function (evt) {
                 evt.preventDefault();
                 $figures.empty();
