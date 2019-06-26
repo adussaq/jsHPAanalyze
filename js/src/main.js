@@ -731,6 +731,10 @@
 
         state.push([]);
 
+        let $geneListHeaders = $('<div>', {
+            class: "row"
+        }).appendTo($main);
+
         let $geneList = $('<div>', {
             class: "row",
             height: "300px"
@@ -757,6 +761,7 @@
         }).appendTo($infoList);
 
         const geneListFunc = function (states, data) {
+            $geneListHeaders.html('<div class="col-6 h4">Potential Gene List</div><div class="col-6 h4">Selected Genes</div>');
             $geneList.empty();
             $geneButtonList.empty();
 
