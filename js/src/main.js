@@ -3,11 +3,8 @@
     "use strict";
 
     const headers_for_dashboard = [
-        {name: "Protein class", func: (x) => x.split(/\s*,\s*/)},
+        // {name: "Protein class", func: (x) => x.split(/\s*,\s*/)},
         // {name: "Antibody", func: (x) => x.split(/\s*,\s*/)}, too many unique options
-        {name: "Reliability (IH)", func: (x) => [x]},
-        {name: "Reliability (Mouse Brain)", func: (x) => [x]},
-        {name: "Reliability (IF)", func: (x) => [x]},
         {name: "Subcellular location", func: (x) => x.split(/\s*<br>\s*/)},
         {name: "Prognostic p-value", func: function (full_str) {
             return full_str.split(/\s*,\s*/).map(function (p_str) {
@@ -15,14 +12,18 @@
                 return p_str.replace(/\s*:\s*[\de\-\.]+/, "");
             });
         }},
-        {name: "RNA cancer category", func: (x) => [x]},
-        {name: "RNA tissue category", func: (x) => [x]},
+        // {name: "RNA cancer category", func: (x) => [x]},
+        // {name: "RNA tissue category", func: (x) => [x]},
         // {name: "RNA TS", func: (x) => [x]},
         {name: "RNA TS TPM", func: (x) => x.replace(/\s*:\s*[\d\.]+/g, "").split(/\s*;\s*/)},
         //{name: "TPM max in non-specific", func: (x) => [x]},
-        {name: "RNA cell line category", func: (x) => [x]},
+        // {name: "RNA cell line category", func: (x) => [x]},
         //{name: "RNA CS", func: (x) => [x]},
-        {name: "RNA CS TPM", func: (x) => x.replace(/\s*:\s*[\d\.]+/g, "").split(/\s*;\s*/)}
+        {name: "RNA CS TPM", func: (x) => x.replace(/\s*:\s*[\d\.]+/g, "").split(/\s*;\s*/)},
+        {name: "Reliability (IH)", func: (x) => [x]},
+        {name: "Reliability (Mouse Brain)", func: (x) => [x]},
+        {name: "Reliability (IF)", func: (x) => [x]}
+        // {name: "Gene", func: (x) => [x]}
     ];
 
     let stateChangeQueue;
@@ -61,10 +62,16 @@
 
     const build_groups = function (data, state) {
         let counter = [];
+        let thisdataFilter = data.data;
+        if (state && state[state.length - 1] && state[state.length - 1].length) {
+            thisdataFilter = thisdataFilter.filter((entry) => state[state.length - 1].indexOf(entry.Gene) + 1);
+        }
+        // console.log("thisdataFilter", thisdataFilter);
+
         headers_for_dashboard.forEach(function (parse_obj, ind) {
             state[ind] = state[ind] || {};
             counter[ind] = counter[ind] || {};
-            data.data.filter(function (entry) {
+            thisdataFilter.filter(function (entry) {
                 let keep = true;
                 state.forEach(function (state_obj, state_ind) {
                     // concept here:
@@ -90,7 +97,7 @@
                             }
                             return Math.max(a, b);
                         });
-                        //console.log(good, match_check_arr, state_obj.selected);
+                        //// console.log(good, match_check_arr, state_obj.selected);
                         if (good < 0) {
                             keep = false;
                         }
@@ -104,19 +111,34 @@
                     counter[ind][elem].push(entry_ind);
                 });
             });
+
             // if (ind > 2) {
             //     throw "No more for now...";
             // }
         });
-        console.log(counter);
+        // console.log("here is counter", counter);
+        // if (state[state.length -1].length) {
+        //     counter.forEach(function (figList) {
+        //         figList.
+        //     });
+        // }
         return {
             data: counter,
             header: headers_for_dashboard.map((x) => x.name)
         };
     };
 
-    const getList = function (data, state) {
-        return data.data.filter(function (entry) {
+    const getList = function (data, state, full) {
+        let filterList = data.data;
+        if (state && state[state.length - 1] && state[state.length - 1].length && !full) {
+            filterList = data.data.filter(function (entry) {
+                if (state[state.length - 1].indexOf(entry.Gene) >= 0) {
+                    return true;
+                }
+                return false;
+            });
+        }
+        return filterList.filter(function (entry) {
             let keep = true;
             headers_for_dashboard.forEach(function (parse_obj, ind) {
                 if (keep && state[ind].selected.length) {
@@ -130,7 +152,7 @@
                         }
                         return Math.max(a, b);
                     });
-                    //console.log(good, match_check_arr, state_obj.selected);
+                    //// console.log(good, match_check_arr, state_obj.selected);
                     if (good < 0) {
                         keep = false;
                     }
@@ -153,7 +175,7 @@
     const state_change = function (data, state_arr) {
         return function () {
             let groups = build_groups(data, state_arr);
-            console.log('changing states', groups, state_arr);
+            // console.log('changing states', groups, state_arr);
             state_arr.forEach(function (state_obj, state_ind) {
                 if (state_obj.hasOwnProperty("chart")) {
                     state_obj.chart.dashboardUpdate(groups.data[state_ind]);
@@ -257,10 +279,10 @@
                 return false;
             }
             let selected_key = labels[seriesIndex] + " (" + values[groupIndex].name.toLocaleLowerCase() + ")";
-            console.log(seriesIndex, selected_key, programmatic, groupIndex, labels);
+            // console.log(seriesIndex, selected_key, programmatic, groupIndex, labels);
             const $wrap = chart.w.globals.dom.elWrap;
             let elem = $wrap.querySelector('path[j="' + seriesIndex + '"][index="' + groupIndex + '"]');
-            console.log("toggle element", elem);
+            // console.log("toggle element", elem);
             //let legend = $wrap.querySelector('div[rel="' + (seriesIndex + 1) + '"].apexcharts-legend-series');
 
             const elemStyle = elem.getAttribute('style') || "";
@@ -307,7 +329,7 @@
                     beforeMount: undefined,
                     mounted: function () {
                         state.selected.forEach(function (key) {
-                            console.log("mounting per key", key);
+                            // console.log("mounting per key", key);
                             let group = 0;
                             const sample = labels.indexOf(key.replace(/\s*\([^\)]*\)\s*/, ""));
                             if (key.match(/unfavou*rable/i)) {
@@ -323,11 +345,11 @@
                         state.selected.forEach(function (key) {
                             let group = 0;
                             const sample = labels.indexOf(key.replace(/\s*\([^\)]*\)\s*/, ""));
-                            console.log("updating per key", key);
+                            // console.log("updating per key", key);
                             if (key.match(/unfavou*rable/i)) {
                                 group = 1;
                             }
-                            console.log('found updated', key, group, sample, key.replace(/\s*\([^\)]*\)\s*/, ""));
+                            // console.log('found updated', key, group, sample, key.replace(/\s*\([^\)]*\)\s*/, ""));
                             toggle_select(sample, true, group, chartContext, config);
                         });
                     },
@@ -411,7 +433,7 @@
             const new_keys = newBarObj.labels;
             const new_vals = newBarObj.data;
 
-            console.log('calling here...', newBarObj, new_data);
+            // console.log('calling here...', newBarObj, new_data);
 
             let different = false;
             if (new_vals.length !== values.length) {
@@ -434,7 +456,7 @@
             }
 
             if (different) {
-                // console.log("different", keys.slice(), new_keys.slice(), state);
+                // // console.log("different", keys.slice(), new_keys.slice(), state);
                 labels = new_keys;
                 values = new_vals;
 
@@ -499,7 +521,7 @@
             if (seriesIndex < 0) {
                 return false;
             }
-            console.log(seriesIndex, keys[seriesIndex], programmatic);
+            // console.log(seriesIndex, keys[seriesIndex], programmatic);
             const $wrap = chart.w.globals.dom.elWrap;
             let elem = $wrap.querySelector('#apexcharts-donut-slice-' + seriesIndex);
             let legend = $wrap.querySelector('div[rel="' + (seriesIndex + 1) + '"].apexcharts-legend-series');
@@ -661,7 +683,7 @@
             }
 
             if (different) {
-                // console.log("different", keys.slice(), new_keys.slice(), state);
+                // // console.log("different", keys.slice(), new_keys.slice(), state);
                 keys = new_keys;
                 values = new_vals;
 
@@ -692,7 +714,7 @@
             class: "row"
         }).appendTo($main);
 
-        console.log(groups);
+        // console.log(groups);
 
         groups.data.forEach(function (datum, ind) {
             let $div = $('<div>', {
@@ -706,6 +728,17 @@
             }
             state[ind].chart.render();
         });
+
+        state.push([]);
+
+        let $geneList = $('<div>', {
+            class: "row",
+            height: "300px"
+        }).appendTo($main);
+
+        let $geneButtonList = $('<div>', {
+            class: "row"
+        }).appendTo($main);
 
         let $infoList = $('<div>', {
             class: "row"
@@ -723,12 +756,105 @@
             class: "col-12"
         }).appendTo($infoList);
 
+        const geneListFunc = function (states, data) {
+            $geneList.empty();
+            $geneButtonList.empty();
+
+            let selectedGenes = states[states.length - 1];
+            let tempSelected = {};
+
+            selectedGenes.forEach(function (gne) {
+                tempSelected[gne] = 1;
+            });
+
+            // console.log("list genes", selectedGenes, state);
+
+            let $posGene = $('<div>', {
+                class: "col-xs-9 col-6",
+                style: "overflow-y: scroll; height: 100%; border: 1px solid grey; border-radius: 5px;"
+            });
+            let $selectedGene = $('<div>', {
+                class: "col-xs-3 col-6",
+                style: "overflow-y: scroll; height: 100%; border: 1px solid grey; border-radius: 5px;"
+            });
+
+            let $addGene = $('<div>', {
+                class: "col-12 text-center"
+            }).append($('<button>', {
+                class: 'btn btn-success',
+                text: "Update lists"
+            }));
+
+            $geneList.append($posGene).append($selectedGene);
+
+            $geneButtonList.append($addGene);
+
+            let geneList = getList(data, states, true);
+
+            // console.log("stuff here", geneList);
+
+            const buildSides = function () {
+                $posGene.empty();
+                $selectedGene.empty();
+                let $entry_examp;
+                // console.log(tempSelected);
+                geneList.forEach(function (entry) {
+                    if (!tempSelected[entry.Gene]) {
+                        $entry_examp = $('<div>', {
+                            class: "gene-name",
+                            style: "width: 100%; border: 1px solid grey; border-radius: 5px;",
+                            text: entry.Gene
+                        }).click(function (evt) {
+                            evt.preventDefault();
+                            if ($(this).attr('class') === 'gene-name-clicked') {
+                                $(this).attr('class', 'gene-name');
+                                tempSelected[$(this).text()] = 0;
+                            } else {
+                                $(this).attr('class', 'gene-name-clicked');
+                                tempSelected[$(this).text()] = 1;
+                            }
+                        });
+                        $entry_examp.appendTo($posGene);
+                    } else {
+                        $entry_examp = $('<div>', {
+                            class: "gene-name",
+                            style: "width: 100%; border: 1px solid grey; border-radius: 5px;",
+                            text: entry.Gene
+                        }).click(function (evt) {
+                            evt.preventDefault();
+                            if ($(this).attr('class') === 'gene-name-clicked') {
+                                $(this).attr('class', 'gene-name');
+                                tempSelected[$(this).text()] = 1;
+                            } else {
+                                $(this).attr('class', 'gene-name-clicked');
+                                tempSelected[$(this).text()] = 0;
+                            }
+                        });
+                        $entry_examp.appendTo($selectedGene);
+                    }
+                });
+            };
+
+            buildSides();
+
+            $addGene.click(function (evt) {
+                evt.preventDefault();
+                states[states.length - 1] = Object.keys(tempSelected).filter((key) => tempSelected[key]);
+                state_change(data, states)();
+            });
+
+        };
+
+        stateChangeQueue("Gene List", geneListFunc);
+
+        geneListFunc(state, data);
+
         stateChangeQueue("Sample Number", function (states, data) {
             let list = getList(data, states);
             $figures.empty();
             $sampleNumber.empty();
             $buttons.empty();
-            console.log('working on the update', states, data, list, list.map((x) => x["Prognostic p-value"]));
+            // console.log('working on the update', states, data, list, list.map((x) => x["Prognostic p-value"]));
             $sampleNumber.text(list.length + " matched entries (Recommend no more than 50 entries, this will load slower the first time viewing data.)");
             $('<button>', {
                 class: "btn btn-primary",
@@ -740,7 +866,7 @@
                 let $count = $('<div>').appendTo($buttons);
                 let count = 0;
                 let total = list.length;
-                console.log(list);
+                // console.log(list);
                 $count.html('<p class="lead">Loading beginning</p>');
                 Promise.all(list.map(function (entry) {
                     return glob.get({ensembl: entry.Ensembl})
@@ -784,8 +910,8 @@
                         }
                         return;
                     }).filter((x) => x);
-                    console.log(all);
-                    console.log(pt_perc);
+                    // console.log(all);
+                    // console.log(pt_perc);
 
                     //build figure data
                     let figures = {};
@@ -805,7 +931,7 @@
                                     {name: "High", data: []}
                                 ]
                             };
-                            console.log(dat.tissue, figures[dat.tissue], dat);
+                            // console.log(dat.tissue, figures[dat.tissue], dat);
                             figures[dat.tissue].series.forEach((x) => x.data.push(0));
                             const ind = figures[dat.tissue].series[0].data.length - 1;
                             dat.tissueCell.level.forEach(function (count) {
@@ -869,7 +995,7 @@
                             class: 'col col-xs-12 col-sm-6'
                         });
                         $fig.appendTo($figures);
-                        console.log(options);
+                        // console.log(options);
                         let chart = new ApexCharts(
                             $fig[0],
                             options
@@ -877,7 +1003,7 @@
                         chart.render();
                     });
 
-                    console.log(figures, categories);
+                    // console.log(figures, categories);
                 });
             }).appendTo($buttons);
         });
