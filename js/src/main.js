@@ -1235,207 +1235,192 @@
                 });
             }).appendTo($buttons);
 
-            // Final Figure
-            // $('<button>', {
-            //     class: "btn btn-primary col-4",
-            //     type: "button",
-            //     style: "width: 30%;",
-            //     text: "Build Figure: Final Figure"
-            // }).click(function (evt) {
-            //     evt.preventDefault();
-            //     $figures.empty();
-            //     let $count = $('<div>').appendTo($buttons);
-            //     let count = 0;
-            //     let total = list.length;
-            //     // console.log(list);
-            //     $count.html('<p class="lead">Loading beginning</p>');
-            //     Promise.all(list.map(function (entry) {
-            //         return glob.get({ensembl: entry.Ensembl})
-            //             .then(function (res) {
-            //                 count += 1;
-            //                 $count.html('<p class="lead">Loaded: ' + count + ' / ' + total + '</p>');
-            //                 return res;
-            //             });
-            //     })).then(function (x) {
-            //         return new Promise(function (resolve) {
-            //             setTimeout(function () {
-            //                 resolve(x);
-            //             }, 1000);
-            //         });
-            //     }).then(function (tmp) {
-            //         $figures.empty();
+// Protein Expression in Tissue
+            $('<button>', {
+                class: "btn btn-primary col-4",
+                type: "button",
+                style: "width: 30%;",
+                text: "Build Figure: Subcellular Localization By Protein"
+            }).click(function (evt) {
+                evt.preventDefault();
+                $figures.empty();
+                let $count = $('<div>').appendTo($buttons);
+                let count = 0;
+                let total = list.length;
+                // console.log(list);
+                $count.html('<p class="lead">Loading beginning</p>');
+                Promise.all(list.map(function (entry) {
+                    return glob.get({ensembl: entry.Ensembl})
+                        .then(function (res) {
+                            count += 1;
+                            $count.html('<p class="lead">Loaded: ' + count + ' / ' + total + '</p>');
+                            return res;
+                        });
+                })).then(function (x) {
+                    return new Promise(function (resolve) {
+                        setTimeout(function () {
+                            resolve(x);
+                        }, 1000);
+                    });
+                }).then(function (tmp) {
+                    $figures.empty();
 
-            //         //get all
-            //         const all = tmp.map(function (gene) {
-            //             return gene.proteinAtlas.entry;
-            //         });
+                    //get all
+                    const all = tmp.map(function (gene) {
+                        return gene.proteinAtlas.entry;
+                    });
 
-            //         //grab the genes with data
-            //         const pt_perc = all.map(function (entry) {
-            //             if (entry.hasOwnProperty("antibody")) {
-            //                 if (!Array.isArray(entry.antibody)) {
-            //                     entry.antibody = [entry.antibody];
-            //                 }
-            //                 entry.antibody.sort(function (a, b) {
-            //                     return b["@releaseVersion"] * 1 - a["@releaseVersion"] * 1;
-            //                 });
-            //                 let found;
-            //                 entry.antibody.map(function (ant) {
-            //                     if (!found && ant.hasOwnProperty("tissueExpression")) {
-            //                         found = ant.tissueExpression.filter((x) => x["@assayType"] === "tissue")[0];
-            //                     }
-            //                 });
+                    // console.log(all);
 
-            //                 if (found) {
-            //                     return {anti: found.data, name: entry.name};
-            //                 }
-            //                 return found;
-            //             }
-            //             return;
-            //         }).filter((x) => x);
-            //         console.log(all, pt_perc);
-            //         // console.log(all);
-            //         // console.log(pt_perc);
+                    //grab the genes with data
+                    const pt_perc = all.map(function (entry) {
+                        if (entry.hasOwnProperty("cellExpression")) {
+                            let found = entry.cellExpression;
 
-            //         //build figure data
-            //         let allTissues = {};
-            //         let figureDataInit = pt_perc.map(function (entry) {
-            //             let graphRow = {
-            //                 name: entry.name
-            //             };
+                            if (found && found.hasOwnProperty('data')) {
+                                found = found.data;
+                            } else {
+                                found = false;
+                            }
 
-            //             graphRow.data = {};
-            //             entry.anti.forEach(function (tissue) {
-            //                 if (!Array.isArray(tissue.tissueCell)) {
-            //                     tissue.tissueCell = [tissue.tissueCell];
-            //                 }
+                            if (found && found.hasOwnProperty('location')) {
+                                found = found.location;
+                                if (!Array.isArray(found)) {
+                                    found = [found];
+                                }
+                            } else {
+                                found = false;
+                            }
 
-            //                 tissue.tissueCell.forEach(function (each) {
-            //                     //find ys
-            //                     const ybegin = each.level.filter(function (x) {
-            //                         if (x["@type"] === "staining") {
-            //                             return true;
-            //                         }
-            //                         return false;
-            //                     });
+                            if (found && found.length > 0) {
+                                return {anti: found.map((x) => x["#text"]), name: entry.name};
+                            }
+                            return found;
+                        }
+                        return;
+                    }).filter((x) => x);
+                    console.log(all, pt_perc);
+                    // console.log(all);
+                    // console.log(pt_perc);
 
-            //                     const ystr = ybegin[0]["#text"];
+                    //build figure data
+                    let allTissues = {};
+                    let figureDataInit = pt_perc.map(function (entry) {
+                        let graphRow = {
+                            name: entry.name
+                        };
 
-            //                     const ynum = ystr.match(/not\ detected/i)
-            //                         ? 1
-            //                         : ystr.match(/low/i)
-            //                             ? 2
-            //                             : ystr.match(/medium/i)
-            //                                 ? 3
-            //                                 : 4;
-            //                     graphRow.data[tissue.tissue + " / " + each.cellType] = ynum;
-            //                     allTissues[tissue.tissue + " / " + each.cellType] = 1;
-            //                 });
-            //             });
+                        graphRow.data = {};
+                        entry.anti.forEach(function (loc) {
+                            graphRow.data[loc] = 1;
+                            allTissues[loc] = 1;
+                        });
 
-            //             return graphRow;
-            //         });
+                        return graphRow;
+                    });
 
-            //         const allTissuesArr = Object.keys(allTissues).sort();
-            //         const figureDataTrans = figureDataInit.map(function (byGene) {
-            //             let retObj = {
-            //                 name: byGene.name
-            //             };
-            //             retObj.data = allTissuesArr.map(function (tissueStr) {
-            //                 if (byGene.data[tissueStr]) {
-            //                     return {
-            //                         x: tissueStr,
-            //                         y: byGene.data[tissueStr]
-            //                     };
-            //                 }
-            //                 return {
-            //                     x: tissueStr,
-            //                     y: 0
-            //                 };
-            //             });
-            //             return retObj;
-            //         });
-            //         let figureData = [];
-            //         figureDataTrans.forEach(function (byGene, ind2) {
-            //             byGene.data.forEach(function (byTissue, ind_t) {
-            //                 let ind1 = allTissuesArr.length - ind_t - 1;
-            //                 figureData[ind1] = figureData[ind1] || {
-            //                     name: byTissue.x,
-            //                     data: []
-            //                 };
-            //                 figureData[ind1].data[ind2] = {
-            //                     x: byGene.name,
-            //                     y: byTissue.y
-            //                 };
-            //             });
-            //         });
+                    const allTissuesArr = Object.keys(allTissues).sort();
+                    const figureDataTrans = figureDataInit.map(function (byGene) {
+                        let retObj = {
+                            name: byGene.name
+                        };
+                        retObj.data = allTissuesArr.map(function (tissueStr) {
+                            if (byGene.data[tissueStr]) {
+                                return {
+                                    x: tissueStr,
+                                    y: byGene.data[tissueStr]
+                                };
+                            }
+                            return {
+                                x: tissueStr,
+                                y: 0
+                            };
+                        });
+                        return retObj;
+                    });
 
-            //         console.log(figureData, figureDataInit);
+                    //transpose data
+                    let figureData = [];
+                    figureDataTrans.forEach(function (byGene, ind2) {
+                        byGene.data.forEach(function (byTissue, ind_t) {
+                            let ind1 = allTissuesArr.length - ind_t - 1;
+                            figureData[ind1] = figureData[ind1] || {
+                                name: byTissue.x,
+                                data: []
+                            };
+                            figureData[ind1].data[ind2] = {
+                                x: byGene.name,
+                                y: byTissue.y
+                            };
+                        });
+                    });
 
-            //         //Create figure
-            //         let options = {
-            //             chart: {
-            //                 height: 15 * figureData.length,
-            //                 width: "100%",
-            //                 type: 'heatmap'
-            //             },
-            //             plotOptions: {
-            //                 heatmap: {
-            //                     shadeIntensity: 0.5,
-            //                     colorScale: {
-            //                         ranges: [{
-            //                             from: -1,
-            //                             to: 0.1,
-            //                             name: 'No Data (0)',
-            //                             color: '#FFFFFF'
-            //                         }, {
-            //                             from: 0.1,
-            //                             to: 1.1,
-            //                             name: 'Not Detected (1)',
-            //                             color: '#00A100'
-            //                         }, {
-            //                             from: 1.1,
-            //                             to: 2.1,
-            //                             name: 'Low (2)',
-            //                             color: '#128FD9'
-            //                         }, {
-            //                             from: 2.1,
-            //                             to: 3.1,
-            //                             name: 'Medium (3)',
-            //                             color: '#FFB200'
-            //                         }, {
-            //                             from: 3.1,
-            //                             to: 4.1,
-            //                             name: 'High (4)',
-            //                             color: '#FF0000'
-            //                         }]
-            //                     }
-            //                 }
-            //             },
-            //             dataLabels: {
-            //                 enabled: false
-            //             },
-            //             series: figureData,
-            //             title: {
-            //                 text: 'Protein Expression in Various Tissues'
-            //             }
-            //         };
+                    // console.log(figureData, figureDataInit);
 
-            //         let $fig = $('<div>', {
-            //             class: 'col-12'
-            //         });
+                    //Create figure
+                    (function () {
+                        let options = {
+                            chart: {
+                                height: 25 * figureData.length,
+                                // width: "95%",
+                                type: 'heatmap'
+                            },
+                            plotOptions: {
+                                heatmap: {
+                                    shadeIntensity: 0.5,
+                                    colorScale: {
+                                        ranges: [{
+                                            from: -1,
+                                            to: 0.1,
+                                            name: 'No Expression (0)',
+                                            color: '#FFFFFF'
+                                        }, {
+                                            from: 0.1,
+                                            to: 1.1,
+                                            name: 'Expression (1)',
+                                            color: '#000000'
+                                        }]
+                                    }
+                                }
+                            },
+                            yaxis: {
+                                labels: {
+                                    show: true,
+                                    // offsetY: -40,
+                                    offsetY: -8,
+                                    rotate: -5,
+                                    maxWidth: 400,
+                                    style: {
+                                        fontSize: "12px"
+                                    }
+                                }
+                            },
+                            dataLabels: {
+                                enabled: false
+                            },
+                            series: figureData,
+                            title: {
+                                text: 'Protein Expression in Various Subcellular Locations'
+                            }
+                        };
 
-            //         $fig.appendTo($figures);
+                        let $fig = $('<div>', {
+                            class: 'col-12'
+                        });
 
-            //         let chart = new ApexCharts(
-            //             $fig[0],
-            //             options
-            //         );
-            //         chart.render();
+                        $fig.appendTo($figures);
 
-            //         // console.log(figures, categories);
-            //     });
-            // }).appendTo($buttons);
+                        let chart = new ApexCharts(
+                            $fig[0],
+                            options
+                        );
+                        chart.render();
+                    }());
+
+                    // console.log(figures, categories);
+                });
+            }).appendTo($buttons);
+
         });
     }).catch(console.error);
 }(HPA));
