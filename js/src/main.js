@@ -872,7 +872,7 @@
             }).click(function (evt) {
                 evt.preventDefault();
                 $figures.empty();
-                let $count = $('<div>').appendTo($buttons);
+                let $count = $('<div>').appendTo($figures);
                 let count = 0;
                 let total = list.length;
                 // console.log(list);
@@ -882,6 +882,9 @@
                         .then(function (res) {
                             count += 1;
                             $count.html('<p class="lead">Loaded: ' + count + ' / ' + total + '</p>');
+                            if (count === total) {
+                                $count.html('<p class="lead">Loaded: ' + count + ' / ' + total + '. Now creating figures, please wait.</p>');
+                            }
                             return res;
                         });
                 })).then(function (x) {
@@ -1026,7 +1029,7 @@
             }).click(function (evt) {
                 evt.preventDefault();
                 $figures.empty();
-                let $count = $('<div>').appendTo($buttons);
+                let $count = $('<div>').appendTo($figures);
                 let count = 0;
                 let total = list.length;
                 // console.log(list);
@@ -1036,6 +1039,9 @@
                         .then(function (res) {
                             count += 1;
                             $count.html('<p class="lead">Loaded: ' + count + ' / ' + total + '</p>');
+                            if (count === total) {
+                                $count.html('<p class="lead">Loaded: ' + count + ' / ' + total + '. Now creating figures, please wait.</p>');
+                            }
                             return res;
                         });
                 })).then(function (x) {
@@ -1244,7 +1250,7 @@
             }).click(function (evt) {
                 evt.preventDefault();
                 $figures.empty();
-                let $count = $('<div>').appendTo($buttons);
+                let $count = $('<div>').appendTo($figures);
                 let count = 0;
                 let total = list.length;
                 // console.log(list);
@@ -1254,6 +1260,9 @@
                         .then(function (res) {
                             count += 1;
                             $count.html('<p class="lead">Loaded: ' + count + ' / ' + total + '</p>');
+                            if (count === total) {
+                                $count.html('<p class="lead">Loaded: ' + count + ' / ' + total + '. Now creating figures, please wait.</p>');
+                            }
                             return res;
                         });
                 })).then(function (x) {
