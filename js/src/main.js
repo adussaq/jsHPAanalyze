@@ -1075,7 +1075,7 @@
                         }
                         return;
                     }).filter((x) => x);
-                    console.log(all, pt_perc);
+                    // console.log(all, pt_perc);
                     // console.log(all);
                     // console.log(pt_perc);
 
@@ -1137,6 +1137,8 @@
                         });
                         return retObj;
                     });
+
+                    //transpose data
                     let figureData = [];
                     figureDataTrans.forEach(function (byGene, ind2) {
                         byGene.data.forEach(function (byTissue, ind_t) {
@@ -1152,68 +1154,82 @@
                         });
                     });
 
-                    console.log(figureData, figureDataInit);
+                    // console.log(figureData, figureDataInit);
 
                     //Create figure
-                    let options = {
-                        chart: {
-                            height: 15 * figureData.length,
-                            width: "100%",
-                            type: 'heatmap'
-                        },
-                        plotOptions: {
-                            heatmap: {
-                                shadeIntensity: 0.5,
-                                colorScale: {
-                                    ranges: [{
-                                        from: -1,
-                                        to: 0.1,
-                                        name: 'No Data (0)',
-                                        color: '#FFFFFF'
-                                    }, {
-                                        from: 0.1,
-                                        to: 1.1,
-                                        name: 'Not Detected (1)',
-                                        color: '#00A100'
-                                    }, {
-                                        from: 1.1,
-                                        to: 2.1,
-                                        name: 'Low (2)',
-                                        color: '#128FD9'
-                                    }, {
-                                        from: 2.1,
-                                        to: 3.1,
-                                        name: 'Medium (3)',
-                                        color: '#FFB200'
-                                    }, {
-                                        from: 3.1,
-                                        to: 4.1,
-                                        name: 'High (4)',
-                                        color: '#FF0000'
-                                    }]
+                    (function () {
+                        let options = {
+                            chart: {
+                                height: 20 * figureData.length,
+                                // width: "95%",
+                                type: 'heatmap'
+                            },
+                            plotOptions: {
+                                heatmap: {
+                                    shadeIntensity: 0.5,
+                                    colorScale: {
+                                        ranges: [{
+                                            from: -1,
+                                            to: 0.1,
+                                            name: 'No Data (0)',
+                                            color: '#FFFFFF'
+                                        }, {
+                                            from: 0.1,
+                                            to: 1.1,
+                                            name: 'Not Detected (1)',
+                                            color: '#00A100'
+                                        }, {
+                                            from: 1.1,
+                                            to: 2.1,
+                                            name: 'Low (2)',
+                                            color: '#128FD9'
+                                        }, {
+                                            from: 2.1,
+                                            to: 3.1,
+                                            name: 'Medium (3)',
+                                            color: '#FFB200'
+                                        }, {
+                                            from: 3.1,
+                                            to: 4.1,
+                                            name: 'High (4)',
+                                            color: '#FF0000'
+                                        }]
+                                    }
                                 }
+                            },
+                            yaxis: {
+                                labels: {
+                                    show: true,
+                                    // offsetY: -40,
+                                    offsetY: -8,
+                                    rotate: -5,
+                                    maxWidth: 400,
+                                    style: {
+                                        fontSize: "12px"
+                                    }
+                                }
+                            },
+                            dataLabels: {
+                                enabled: false
+                            },
+                            series: figureData,
+                            title: {
+                                text: 'Protein Expression in Various Tissues'
                             }
-                        },
-                        dataLabels: {
-                            enabled: false
-                        },
-                        series: figureData,
-                        title: {
-                            text: 'Protein Expression in Various Tissues'
-                        }
-                    };
+                        };
 
-                    let $fig = $('<div>', {
-                        class: 'col-12'
-                    });
+                        let $fig = $('<div>', {
+                            class: 'col-12'
+                        });
 
-                    $fig.appendTo($figures);
+                        $fig.appendTo($figures);
 
-                    let chart = new ApexCharts(
-                        $fig[0],
-                        options
-                    );
-                    chart.render();
+                        let chart = new ApexCharts(
+                            $fig[0],
+                            options
+                        );
+                        chart.render();
+                    }());
 
                     // console.log(figures, categories);
                 });
