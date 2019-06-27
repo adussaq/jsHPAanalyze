@@ -1,4 +1,5 @@
 /*global HPA $ jQuery ApexCharts*/
+// let GLOBALTEST;
 (function (glob) {
     "use strict";
 
@@ -714,7 +715,8 @@
             class: "row"
         }).appendTo($main);
 
-        // console.log(groups);
+        console.log("Data is loaded and grouped!", groups, data);
+        // GLOBALTEST = [groups, data];
 
         groups.data.forEach(function (datum, ind) {
             let $div = $('<div>', {
@@ -1161,12 +1163,17 @@
                     });
 
                     // console.log(figureData, figureDataInit);
+                    let figHeight = 20 * figureData.length;
+                    if (figHeight < 550) {
+                        figHeight = 550;
+                    }
+
 
                     //Create figure
                     (function () {
                         let options = {
                             chart: {
-                                height: 20 * figureData.length,
+                                height: figHeight,
                                 // width: "95%",
                                 type: 'heatmap'
                             },
@@ -1241,7 +1248,7 @@
                 });
             }).appendTo($buttons);
 
-// Protein Expression in Tissue
+            // Protein Expression in Tissue
             $('<button>', {
                 class: "btn btn-primary col-4",
                 type: "button",
@@ -1366,11 +1373,16 @@
 
                     // console.log(figureData, figureDataInit);
 
+                    let figHeight = 20 * figureData.length;
+                    if (figHeight < 550) {
+                        figHeight = 550;
+                    }
+
                     //Create figure
                     (function () {
                         let options = {
                             chart: {
-                                height: 25 * figureData.length,
+                                height: figHeight,
                                 // width: "95%",
                                 type: 'heatmap'
                             },
