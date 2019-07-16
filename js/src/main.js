@@ -769,6 +769,7 @@
 
             let selectedGenes = states[states.length - 1];
             let tempSelected = {};
+            let listRows;
 
             selectedGenes.forEach(function (gne) {
                 tempSelected[gne] = 1;
@@ -792,6 +793,25 @@
                 text: "Update lists"
             }));
 
+            let $searchBar = $('<input type="text" class="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default">').change(function (evt) {
+                console.log(evt, listRows);
+                //respond to search
+                const searchTerm = new RegExp(evt.target.value, 'i');
+                listRows.forEach(function (row) {
+                    if (evt.target.value.length > 0 && !row[1].match(searchTerm) && !row[0].attr('class').match(/gene-name-clicked/i)) {
+                        row[0].hide();
+                    } else {
+                        row[0].show();
+                    }
+                });
+            });
+
+            let $searchBarSpace = $('<div class="col-12 input-group mb-3"></div>')
+                .append('<div class="input-group-prepend"><span class="input-group-text" id="inputGroup-sizing-default">Filter lists by gene name</span></div>')
+                .append($searchBar);
+
+            $geneListHeaders.prepend('<p class="col-12"><small>Due to the large number of genes, searching may be slow, particularly when expanding the list. We recommend limiting with the figures above prior to searching here.</small></p>');
+            $geneListHeaders.prepend($searchBarSpace);
             $geneList.append($posGene).append($selectedGene);
 
             $geneButtonList.append($addGene);
@@ -803,42 +823,48 @@
             const buildSides = function () {
                 $posGene.empty();
                 $selectedGene.empty();
-                let $entry_examp;
+
+                const leftClick = function (evt) {
+                    evt.preventDefault();
+                    if ($(this).attr('class') === 'gene-name-clicked') {
+                        $(this).attr('class', 'gene-name');
+                        tempSelected[$(this).text()] = 0;
+                    } else {
+                        $(this).attr('class', 'gene-name-clicked');
+                        tempSelected[$(this).text()] = 1;
+                    }
+                };
+
+                let rightClick = function (evt) {
+                    evt.preventDefault();
+                    if ($(this).attr('class') === 'gene-name-clicked') {
+                        $(this).attr('class', 'gene-name');
+                        tempSelected[$(this).text()] = 1;
+                    } else {
+                        $(this).attr('class', 'gene-name-clicked');
+                        tempSelected[$(this).text()] = 0;
+                    }
+                };
+
                 // console.log(tempSelected);
-                geneList.forEach(function (entry) {
+                listRows = geneList.map(function (entry) {
+                    let $entry_examp;
                     if (!tempSelected[entry.Gene]) {
                         $entry_examp = $('<div>', {
                             class: "gene-name",
                             style: "width: 100%; border: 1px solid grey; border-radius: 5px;",
                             text: entry.Gene
-                        }).click(function (evt) {
-                            evt.preventDefault();
-                            if ($(this).attr('class') === 'gene-name-clicked') {
-                                $(this).attr('class', 'gene-name');
-                                tempSelected[$(this).text()] = 0;
-                            } else {
-                                $(this).attr('class', 'gene-name-clicked');
-                                tempSelected[$(this).text()] = 1;
-                            }
-                        });
+                        }).click(leftClick);
                         $entry_examp.appendTo($posGene);
                     } else {
                         $entry_examp = $('<div>', {
                             class: "gene-name",
                             style: "width: 100%; border: 1px solid grey; border-radius: 5px;",
                             text: entry.Gene
-                        }).click(function (evt) {
-                            evt.preventDefault();
-                            if ($(this).attr('class') === 'gene-name-clicked') {
-                                $(this).attr('class', 'gene-name');
-                                tempSelected[$(this).text()] = 1;
-                            } else {
-                                $(this).attr('class', 'gene-name-clicked');
-                                tempSelected[$(this).text()] = 0;
-                            }
-                        });
+                        }).click(rightClick);
                         $entry_examp.appendTo($selectedGene);
                     }
+                    return [$entry_examp, entry.Gene];
                 });
             };
 
