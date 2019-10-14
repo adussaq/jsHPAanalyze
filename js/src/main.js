@@ -6,21 +6,21 @@
     const headers_for_dashboard = [
         // {name: "Protein class", func: (x) => x.split(/\s*,\s*/)},
         // {name: "Antibody", func: (x) => x.split(/\s*,\s*/)}, too many unique options
-        {name: "Subcellular location", func: (x) => x.split(/\s*<br>\s*/)},
-        {name: "Prognostic p-value", func: function (full_str) {
-            return full_str.split(/\s*,\s*/).map(function (p_str) {
-                //return p_str.split(/:/).shift();
-                return p_str.replace(/\s*:\s*[\de\-\.]+/, "");
-            });
-        }},
+        {name: "Subcellular location", func: (x) => x.split(/\s*,\s*/)},
+        // {name: "Prognostic p-value", func: function (full_str) {
+        //     return full_str.split(/\s*,\s*/).map(function (p_str) {
+        //         //return p_str.split(/:/).shift();
+        //         return p_str.replace(/\s*:\s*[\de\-\.]+/, "");
+        //     });
+        // }},
         // {name: "RNA cancer category", func: (x) => [x]},
         // {name: "RNA tissue category", func: (x) => [x]},
         // {name: "RNA TS", func: (x) => [x]},
-        {name: "RNA TS TPM", func: (x) => x.replace(/\s*:\s*[\d\.]+/g, "").split(/\s*;\s*/)},
+        {name: "RNA tissue specific NX", func: (x) => x.replace(/\s*:\s*[\d\.]+/g, "").split(/\s*;\s*/)},
         //{name: "TPM max in non-specific", func: (x) => [x]},
         // {name: "RNA cell line category", func: (x) => [x]},
         //{name: "RNA CS", func: (x) => [x]},
-        {name: "RNA CS TPM", func: (x) => x.replace(/\s*:\s*[\d\.]+/g, "").split(/\s*;\s*/)},
+        {name: "RNA cell line specific NX", func: (x) => x.replace(/\s*:\s*[\d\.]+/g, "").split(/\s*;\s*/)},
         {name: "Reliability (IH)", func: (x) => [x]},
         {name: "Reliability (Mouse Brain)", func: (x) => [x]},
         {name: "Reliability (IF)", func: (x) => [x]}
@@ -48,13 +48,13 @@
             .filter((x) => !x.match(/^\s*$/))
             .map((x) => x.split('\t'));
 
-        const header = arr.shift();
+        const header = arr.shift().map((x) => x.replace(/"*/gi, ''));
         return {
             header: header,
             data: arr.map(function (row) {
                 let obj = {};
                 row.forEach(function (x, ind) {
-                    obj[header[ind]] = x;
+                    obj[header[ind]] = x.replace(/"*/gi, '');
                 });
                 return obj;
             })
@@ -68,6 +68,8 @@
             thisdataFilter = thisdataFilter.filter((entry) => state[state.length - 1].indexOf(entry.Gene) + 1);
         }
         // console.log("thisdataFilter", thisdataFilter);
+
+        // console.log(data, state);
 
         headers_for_dashboard.forEach(function (parse_obj, ind) {
             state[ind] = state[ind] || {};
@@ -106,6 +108,7 @@
                 });
                 return keep;
             }).forEach(function (entry, entry_ind) {
+                // console.log(parse_obj, entry, entry[parse_obj.name], entry_ind);
                 const parsed = parse_obj.func(entry[parse_obj.name]);
                 parsed.forEach(function (elem) {
                     counter[ind][elem] = counter[ind][elem] || [];

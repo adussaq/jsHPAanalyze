@@ -9,10 +9,15 @@
 
     const grab_blob_text = function (url) {
         //first check to see if this is already here
+        // console.log('here we go...');
         return db.urls.get(url).then(function (obj) {
-            if (obj && obj.hasOwnProperty("text")) {
+            const now = new Date() * 1;
+            if (obj && obj.hasOwnProperty("text") && obj.date && now - obj.date > 1000 * 60 * 60 * 24 * 14) {
+                // update every 14 days
                 return obj.text;
             }
+
+            // console.log(obj.date, now, (now - obj.date) / 1000);
 
             // no result so it will go grab it again
             return fetch(url).then((res) => res.blob()).then(function (blob) {
@@ -28,7 +33,8 @@
                 //store in dexie
                 return db.urls.put({
                     url: url,
-                    text: text
+                    text: text,
+                    date: now
                 }).then(function () {
                     return text;
                 });
@@ -104,6 +110,7 @@
     };
 
     const fetch_all = function () {
+        // console.log("here...");
         return grab_blob_text('https://www.proteinatlas.org/search/%20?format=tsv&compress=no');
     };
 
