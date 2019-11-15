@@ -12,9 +12,13 @@
         // console.log('here we go...');
         return db.urls.get(url).then(function (obj) {
             const now = new Date() * 1;
-            if (obj && obj.hasOwnProperty("text") && obj.date && now - obj.date > 1000 * 60 * 60 * 24 * 14) {
-                // update every 14 days
-                return obj.text;
+            if (obj && obj.hasOwnProperty("text") && obj.hasOwnProperty("date")) {
+                const dthen = obj.date * 1;
+                console.log(dthen, now, obj.date);
+                if (dthen && now - dthen > 1000 * 60 * 60 * 24 * 14) {
+                    // update every 14 days
+                    return obj.text;
+                }
             }
 
             // console.log(obj.date, now, (now - obj.date) / 1000);
